@@ -100,8 +100,175 @@ mkdir inventory
 
 5. Within the playbooks folder, create first playbook, and name it common.yml
 
+![image](https://github.com/user-attachments/assets/dc90bdc3-2c66-48c9-97e5-b951d4656ae4)
+
+6. Within the inventory folder, create an inventory file () for each environment (Development, Staging Testing and Production) dev, staging, uat, and prod respectively. These inventory files use .ini languages style to configure Ansible hosts.
+
+![image](https://github.com/user-attachments/assets/a8447e77-cfea-4cfe-9765-6bff3f10cc55)
 
 
+## Step 4 - Set up an Ansible Inventory.
+
+An Ansible inventory file defines the hosts and groups of hosts upon which commands, modules, and tasks in a playbook operate. Since our intention is to execute Linux commands on remote hosts, and ensure that it is the intended configuration on a particular server that occurs. It is important to have a way to organize our hosts in such an Inventory.
+Save the below inventory structure in the inventory/dev file to start configuring development servers. Ensure to replace the IP addresses according to your own setup.
+
+Note: Ansible uses TCP port 22 by default, which means it needs to ssh into target servers from Jenkins-Ansible host - for this you can implement the concept of ssh-agent. Now you need to import key into ssh-agent:
 
 
-![Uploading image.png…]()
+```
+eval `ssh-agent -s`
+ssh-add <path-to-private-key>
+```
+
+![image](https://github.com/user-attachments/assets/8cbb6f52-a638-4d26-95a4-d0dba6d74960)
+
+Confirm the key has been added with the command below, we should see the name of key.
+
+```
+ssh-add -l
+```
+![image](https://github.com/user-attachments/assets/128f149b-eca0-445c-a4a8-8dffdbedfde8)
+
+Now, ssh into  Jenkins-Ansible server using ssh-agent
+
+```
+ssh -A ubuntu@public-ip
+```
+![image](https://github.com/user-attachments/assets/5188f3b5-a746-49e5-af25-612e1b543e56)
+
+we can able to do login through VSC.
+![image](https://github.com/user-attachments/assets/8b9c707b-ec6e-4575-8c51-ad9eeefe47e4)
+
+Update your inventory/dev.yml file with this snippet of code:
+
+```
+[nfs]
+<NFS-Server-Private-IP-Address> ansible_ssh_user=ec2-user
+
+[webservers]
+<Web-Server1-Private-IP-Address> ansible_ssh_user=ec2-user
+<Web-Server2-Private-IP-Address> ansible_ssh_user=ec2-user
+
+[db]
+<Database-Private-IP-Address> ansible_ssh_user=ec2-user
+
+[lb]
+<Load-Balancer-Private-IP-Address> ansible_ssh_user=ubuntu
+```
+
+## Step 5 - Create a Common Playbook.
+
+- It is time to start giving Ansible the instructions on what need to be performed on all servers listed in inventory/dev.
+- In common.yml playbook We will write configuration for repeatable, re-usable, and multi-machine tasks that is common to systems within the infrastructure.
+- Update your playbooks/common.yml file with following code
+
+```
+---
+- name: update web, nfs and db servers
+  hosts: webservers, nfs, db
+  become: yes
+  tasks:
+    - name: ensure wireshark is at the latest version
+      yum:
+        name: wireshark
+        state: latest
+
+- name: update LB server
+  hosts: lb
+  become: yes
+  tasks:
+    - name: Update apt repo
+      apt:
+        update_cache: yes
+
+    - name: ensure wireshark is at the latest version
+      apt:
+        name: wireshark
+        state: latest
+
+```
+
+Examine the code above and try to make sense out of it. This playbook is divided into two parts, each of them is intended to perform the same task: install wireshark utility (or make sure it is updated to the latest version) on  RHEL 9 and Ubuntu servers. It uses root user to perform this task and respective package manager: yum for RHEL 9 and apt for Ubuntu.
+
+Feel free to update this playbook with following tasks:
+
+- Create a directory and a file inside it.
+- Change timezone on all servers.
+- Run some shell script.
+
+```
+---
+- name: update web and nfs servers
+  hosts: webservers, nfs
+  become: yes
+  tasks:
+    - name: ensure wireshark is at the latest version
+      yum:
+        name: wireshark
+        state: latest
+
+    - name: create a directory
+      file:
+        path: /path/to/directory
+        state: directory
+        mode: '0755'
+
+    - name: add a file into the directory
+      copy:
+        content: "This is a sample file content"
+        dest: /path/to/directory/samplefile.txt
+        mode: '0644'
+
+    - name: set timezone to UTC
+      timezone:
+        name: UTC
+
+    - name: run a shell script
+      shell: |
+        #!/bin/bash
+        echo "This is a shell script"
+        echo "Executed on $(date)" >> /path/to/directory/script_output.txt
+
+- name: update LB and db servers
+  hosts: lb, db
+  become: yes
+  tasks:
+    - name: Update apt repo
+      apt:
+        update_cache: yes
+
+    - name: ensure wireshark is at the latest version
+      apt:
+        name: wireshark
+        state: latest
+
+    - name: create a directory
+      file:
+        path: /path/to/directory
+        state: directory
+        mode: '0755'
+
+    - name: add a file into the directory
+      copy:
+        content: "This is a sample file content"
+        dest: /path/to/directory/samplefile.txt
+        mode: '0644'
+
+    - name: set timezone to UTC
+      timezone:
+        name: UTC
+
+    - name: run a shell script
+      shell: |
+        #!/bin/bash
+        echo "This is a shell script"
+        echo "Executed on $(date)" >> /path/to/directory/script_output.txt
+
+```
+```
+git inti
+git add .
+git commit -m "commit message"
+git push origin feature/ansible-1
+
+```
