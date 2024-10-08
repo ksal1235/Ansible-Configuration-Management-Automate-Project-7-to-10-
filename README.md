@@ -280,5 +280,10 @@ db
 loadbalancer
 ![image](https://github.com/user-attachments/assets/7053ec07-ab3b-4cce-96cc-094974d3e86c)
 
+Webserver1
+![image](https://github.com/user-attachments/assets/fd514fea-7537-48e8-aada-2961ddafb5b8)
+
+Webserver2
+![image](https://github.com/user-attachments/assets/1ca58463-b09e-4a8e-9058-5b9bcf2df9e1)
 
 
