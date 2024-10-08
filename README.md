@@ -198,40 +198,23 @@ Feel free to update this playbook with following tasks:
 
 ```
 ---
-- name: update web and nfs servers
+---
+- name: update web, nfs and db servers
   hosts: webservers, nfs
+  remote_user: ec2-user
   become: yes
+  become_user: root
   tasks:
     - name: ensure wireshark is at the latest version
       yum:
         name: wireshark
         state: latest
 
-    - name: create a directory
-      file:
-        path: /path/to/directory
-        state: directory
-        mode: '0755'
-
-    - name: add a file into the directory
-      copy:
-        content: "This is a sample file content"
-        dest: /path/to/directory/samplefile.txt
-        mode: '0644'
-
-    - name: set timezone to UTC
-      timezone:
-        name: UTC
-
-    - name: run a shell script
-      shell: |
-        #!/bin/bash
-        echo "This is a shell script"
-        echo "Executed on $(date)" >> /path/to/directory/script_output.txt
-
-- name: update LB and db servers
+- name: update LB server
   hosts: lb, db
+  remote_user: ubuntu
   become: yes
+  become_user: root
   tasks:
     - name: Update apt repo
       apt:
@@ -242,33 +225,60 @@ Feel free to update this playbook with following tasks:
         name: wireshark
         state: latest
 
-    - name: create a directory
-      file:
-        path: /path/to/directory
-        state: directory
-        mode: '0755'
-
-    - name: add a file into the directory
-      copy:
-        content: "This is a sample file content"
-        dest: /path/to/directory/samplefile.txt
-        mode: '0644'
-
-    - name: set timezone to UTC
-      timezone:
-        name: UTC
-
-    - name: run a shell script
-      shell: |
-        #!/bin/bash
-        echo "This is a shell script"
-        echo "Executed on $(date)" >> /path/to/directory/script_output.txt
-
 ```
+## Step 6 - Update GIT with the latest code.
+
+1. Updating the repository.
 ```
 git inti
 git add .
 git commit -m "commit message"
 git push origin feature/ansible-1
+```
+![image](https://github.com/user-attachments/assets/2150394e-69a5-4c8b-8467-3a96a09083fc)
+
+2. Create a Pull Request (PR).
+
+![image](https://github.com/user-attachments/assets/e0fe7411-8328-4960-a7b2-62a4eb70516a)
+
+![image](https://github.com/user-attachments/assets/87054a36-5c82-4a9f-8177-befb827ad39d)
+wE CAN NOTE HERE THAT WHATEVER THE CONFIGURATION WE HAD DONE ON FEATURE BRANCH IN GOT UPDATE IN MAIN BRANCH WE CAN SEE ON MAIN BRANCH.
+
+3. Head back on your terminal, checkout from the feature branch into the master, and pull down the latest changes.
+
+![image](https://github.com/user-attachments/assets/f87f8833-38ca-4f68-abd1-b1f5df32cd0f)
+
+Due to github Webhook It will goint to start build the jenkins job if there is any changes detect on github.
+![image](https://github.com/user-attachments/assets/9ea5be4d-ae57-42cf-b273-244519c593c7)
+
+Once code changes appear in master branch - Jenkins will do its job and save all the files (build artifacts) to /var/lib/jenkins/jobs/ansible/builds/<build_number>/archive/ directory on Jenkins-Ansible server.
+
+![image](https://github.com/user-attachments/assets/8d76dea8-1619-4b98-8c4b-f99c82017499)
+
+## Step 7 - Run the first Ansible test.
+
+Now, it is time to execute ansible-playbook command and verify if your playbook actually works:
+
+Use sudo 
+```
+sudo ansible-playbook -i inventory/dev.yml playbooks/common.yml
+```
+![image](https://github.com/user-attachments/assets/0bf06217-c907-48b4-a957-0e641689c788)
+
+
+Verify that wire shark is running in each of the servers by running
 
 ```
+      wireshark --version
+```
+NFS-SERVER
+![image](https://github.com/user-attachments/assets/91ccd4ea-5dab-4210-a30c-09102598db5e)
+
+db
+![image](https://github.com/user-attachments/assets/4ef73ead-4983-4c99-b470-3a93f58a4dc3)
+
+loadbalancer
+![image](https://github.com/user-attachments/assets/7053ec07-ab3b-4cce-96cc-094974d3e86c)
+
+
+
